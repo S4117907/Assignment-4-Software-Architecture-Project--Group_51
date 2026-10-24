@@ -3,6 +3,14 @@
 A partial implementation of the OzAgriMate service-based architecture. It shows that the rchitecture in the Software Architecture Document can be realised in code.
 **Eight REST endpoints** are implemented across **four independently deployable FastAPI services**, using in-memory dummy data as the brief requires.
 
+## Team - Group 51
+
+| Member | Name | Student ID | ADRs | Endpoints | Diagrams |
+|---|---|---|---|---|---|
+| A | Dineth Praveena | s4117907 | 1, 2, 3 | 1, 2, 3 | System Context, Farm and Device Component, Deployment |
+| B | Md Abrar Waez Nahian | s4111762 | 4, 5, 6 | 4, 5, 6 | Container, Telemetry Ingestion Component, Telemetry runtime |
+| C | Sheran Mickayel | s4064734 | 7, 8 | 7, 8 | Irrigation Control Component, Irrigation runtime |
+
 ## Run it
 
 ```bash
