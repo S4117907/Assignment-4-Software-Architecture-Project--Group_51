@@ -1,0 +1,156 @@
+newman
+
+OzAgriMate API v1 - Assignment 4
+
+❏ 1. Farm and Device Management Service (port 8001)
+↳ E1 POST /farms - register farm (201)
+  POST http://localhost:8001/api/v1/farms [201 Created, 741B, 80ms]
+  ✓  Status is 201
+  ✓  Location header
+  ✓  New farm id
+
+↳ E1 POST /farms - duplicate PIC (409)
+  POST http://localhost:8001/api/v1/farms [409 Conflict, 375B, 8ms]
+  ✓  Status is 409
+  ✓  Error code is DUPLICATE_PROPERTY_IDENTIFICATION_CODE
+
+↳ E1 POST /farms - latitude outside Australia (422)
+  POST http://localhost:8001/api/v1/farms [422 Unprocessable Content, 435B, 5ms]
+  ✓  Status is 422
+  ✓  Error code is VALIDATION_FAILED
+
+↳ E2 GET /farms/{farmId} - retrieve farm (200)
+  GET http://localhost:8001/api/v1/farms/FARM-001 [200 OK, 1.61kB, 6ms]
+  ✓  Status is 200
+  ✓  Has zones and devices
+
+↳ E2 GET /farms/{farmId} - unknown farm (404)
+  GET http://localhost:8001/api/v1/farms/FARM-999 [404 Not Found, 333B, 5ms]
+  ✓  Status is 404
+  ✓  Error code is FARM_NOT_FOUND
+
+↳ E2 GET /farms/{farmId} - other tenant's farm (403)
+  GET http://localhost:8001/api/v1/farms/FARM-002 [403 Forbidden, 353B, 6ms]
+  ✓  Status is 403
+  ✓  Error code is FARM_ACCESS_DENIED
+
+↳ E3 PUT /farms/{farmId} - update farm (200)
+  PUT http://localhost:8001/api/v1/farms/FARM-001 [200 OK, 1.61kB, 11ms]
+  ✓  Status is 200
+  ✓  Area updated
+  ✓  Version incremented
+
+↳ E3 PUT /farms/{farmId} - remove zone that has devices (409)
+  PUT http://localhost:8001/api/v1/farms/FARM-001 [409 Conflict, 397B, 6ms]
+  ✓  Status is 409
+  ✓  Error code is ZONE_HAS_ACTIVE_DEVICES
+
+❏ 2. Telemetry Ingestion Service (port 8002)
+↳ E4 POST /telemetry - vendor units normalised (202)
+  POST http://localhost:8002/api/v1/telemetry [202 Accepted, 568B, 42ms]
+  ✓  Status is 202
+  ✓  Accepted and published
+  ✓  FRACTION converted to PERCENT
+
+↳ E4 POST /telemetry - same eventId is ignored (200)
+  POST http://localhost:8002/api/v1/telemetry [200 OK, 371B, 5ms]
+  ✓  Status is 200
+  ✓  Duplicate ignored
+
+↳ E4 POST /telemetry - implausible reading quarantined (422)
+  POST http://localhost:8002/api/v1/telemetry [422 Unprocessable Content, 472B, 6ms]
+  ✓  Status is 422
+  ✓  Error code is READING_REJECTED
+
+↳ E4 POST /telemetry - unregistered device (404)
+  POST http://localhost:8002/api/v1/telemetry [404 Not Found, 380B, 5ms]
+  ✓  Status is 404
+  ✓  Error code is DEVICE_NOT_REGISTERED
+
+↳ E5 GET /farms/{farmId}/telemetry/latest - latest readings (200)
+  GET http://localhost:8002/api/v1/farms/FARM-001/telemetry/latest [200 OK, 1.6kB, 6ms]
+  ✓  Status is 200
+  ✓  Stale reading flagged
+  ✓  New reading present
+
+↳ E5 GET /farms/{farmId}/telemetry/latest - no gateway claims (401)
+  GET http://localhost:8002/api/v1/farms/FARM-001/telemetry/latest [401 Unauthorized, 404B, 3ms]
+  ✓  Status is 401
+  ✓  Error code is AUTHENTICATION_REQUIRED
+
+❏ 3. Monitoring and Alert Service (port 8003)
+↳ E6 GET /farms/{farmId}/alerts - open alerts (200)
+  GET http://localhost:8003/api/v1/farms/FARM-001/alerts?status=OPEN [200 OK, 779B, 43ms]
+  ✓  Status is 200
+  ✓  Alert raised from telemetry event
+
+↳ E6 GET /farms/{farmId}/alerts - invalid status filter (422)
+  GET http://localhost:8003/api/v1/farms/FARM-001/alerts?status=MAYBE [422 Unprocessable Content, 441B, 5ms]
+  ✓  Status is 422
+  ✓  Error code is VALIDATION_FAILED
+
+↳ E6 GET /farms/{farmId}/alerts - unknown farm (404)
+  GET http://localhost:8003/api/v1/farms/FARM-999/alerts [404 Not Found, 333B, 5ms]
+  ✓  Status is 404
+  ✓  Error code is FARM_NOT_FOUND
+
+❏ 4. Irrigation Control Service (port 8004)
+↳ E7 POST /farms/{farmId}/irrigation-commands - start (202)
+  POST http://localhost:8004/api/v1/farms/FARM-001/irrigation-commands [202 Accepted, 662B, 33ms]
+  ✓  Status is 202
+  ✓  Dispatched to valve
+
+↳ E7 POST irrigation-commands - zone already irrigating (409)
+  POST http://localhost:8004/api/v1/farms/FARM-001/irrigation-commands [409 Conflict, 409B, 5ms]
+  ✓  Status is 409
+  ✓  Error code is ZONE_ALREADY_IRRIGATING
+
+↳ E7 POST irrigation-commands - agronomist not permitted (403)
+  POST http://localhost:8004/api/v1/farms/FARM-001/irrigation-commands [403 Forbidden, 381B, 5ms]
+  ✓  Status is 403
+  ✓  Error code is ROLE_NOT_PERMITTED
+
+↳ E7 POST irrigation-commands - unconfirmed AI command (403)
+  POST http://localhost:8004/api/v1/farms/FARM-001/irrigation-commands [403 Forbidden, 458B, 5ms]
+  ✓  Status is 403
+  ✓  Error code is HUMAN_CONFIRMATION_REQUIRED
+
+↳ E7 POST irrigation-commands - invalid duration (422)
+  POST http://localhost:8004/api/v1/farms/FARM-001/irrigation-commands [422 Unprocessable Content, 434B, 4ms]
+  ✓  Status is 422
+  ✓  Error code is VALIDATION_FAILED
+
+❏ 5. Device decommissioning across services
+↳ E8 DELETE /farms/{farmId}/devices/{deviceId} - remove device (204)
+  DELETE http://localhost:8001/api/v1/farms/FARM-001/devices/DEV-1005 [204 No Content, 137B, 9ms]
+  ✓  Status is 204
+
+↳ E8 DELETE /farms/{farmId}/devices/{deviceId} - already removed (404)
+  DELETE http://localhost:8001/api/v1/farms/FARM-001/devices/DEV-1005 [404 Not Found, 364B, 5ms]
+  ✓  Status is 404
+  ✓  Error code is DEVICE_NOT_FOUND
+
+↳ E4 POST /telemetry - removed device rejected via event (404)
+  POST http://localhost:8002/api/v1/telemetry [404 Not Found, 380B, 5ms]
+  ✓  Status is 404
+  ✓  Error code is DEVICE_NOT_REGISTERED
+
+┌─────────────────────────┬──────────────────┬──────────────────┐
+│                         │         executed │           failed │
+├─────────────────────────┼──────────────────┼──────────────────┤
+│              iterations │                1 │                0 │
+├─────────────────────────┼──────────────────┼──────────────────┤
+│                requests │               25 │                0 │
+├─────────────────────────┼──────────────────┼──────────────────┤
+│            test-scripts │               25 │                0 │
+├─────────────────────────┼──────────────────┼──────────────────┤
+│      prerequest-scripts │                0 │                0 │
+├─────────────────────────┼──────────────────┼──────────────────┤
+│              assertions │               53 │                0 │
+├─────────────────────────┴──────────────────┴──────────────────┤
+│ total run duration: 772ms                                     │
+├───────────────────────────────────────────────────────────────┤
+│ total data received: 9.71kB (approx)                          │
+├───────────────────────────────────────────────────────────────┤
+│ average response time: 12ms [min: 3ms, max: 80ms, s.d.: 17ms] │
+└───────────────────────────────────────────────────────────────┘

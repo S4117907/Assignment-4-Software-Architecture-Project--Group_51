@@ -1,0 +1,49 @@
+# API Gateway container/ Illustrative production configuration.
+# documents how the single /api/v1 entry point routes to each domain service (ADR 4),
+# validates JWTs from the Identity Provider (ADR 5) and propagates correlation IDs (ADR 8).
+_format_version: "3.0"
+
+services:
+  - name: farm-device-management-service
+    url: http://farm-device-management-service:8001
+    routes:
+      - name: farms
+        paths: ["~/api/v1/farms$", "~/api/v1/farms/FARM-[0-9]+$", "~/api/v1/farms/FARM-[0-9]+/devices"]
+        strip_path: false
+  - name: telemetry-ingestion-service
+    url: http://telemetry-ingestion-service:8002
+    routes:
+      - name: telemetry-ingest
+        paths: ["/api/v1/telemetry"]
+        strip_path: false
+      - name: telemetry-latest
+        paths: ["~/api/v1/farms/FARM-[0-9]+/telemetry"]
+        strip_path: false
+  - name: monitoring-alert-service
+    url: http://monitoring-alert-service:8003
+    routes:
+      - name: alerts
+        paths: ["~/api/v1/farms/FARM-[0-9]+/alerts"]
+        strip_path: false
+  - name: irrigation-control-service
+    url: http://irrigation-control-service:8004
+    routes:
+      - name: irrigation-commands
+        paths: ["~/api/v1/farms/FARM-[0-9]+/irrigation-commands"]
+        strip_path: false
+
+plugins:
+  - name: jwt                      # verify tokens issued by the Identity Provider (MFA enforced there)
+  - name: rate-limiting
+    config: { minute: 600, policy: local }
+  - name: correlation-id
+    config: { header_name: X-Correlation-Id, generator: uuid, echo_downstream: true }
+  - name: request-transformer      # forward verified claims to services
+    config:
+      add:
+        headers:
+          - "X-User-Id:$(claims.sub)"
+          - "X-User-Role:$(claims.role)"
+          - "X-Farm-Access:$(claims.farm_access)"
+  - name: opentelemetry
+    config: { endpoint: "http://otel-collector:4318/v1/traces" }

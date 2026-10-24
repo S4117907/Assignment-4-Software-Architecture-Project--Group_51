@@ -1,0 +1,48 @@
+{
+  "_comment": "Dummy reference data standing in for the shared Operational Database (PostgreSQL). Each service loads only the part it owns or needs, mirroring schema-per-service ownership (ADR 7). Runtime changes are propagated between services through Message Broker events, not by sharing memory.",
+  "farms": [
+    {
+      "farmId": "FARM-001",
+      "name": "Riverbend Orchards",
+      "propertyIdentificationCode": "3RBOR001",
+      "farmType": "HORTICULTURE",
+      "location": {"state": "VIC", "region": "Goulburn Valley", "latitude": -36.3833, "longitude": 145.4},
+      "areaHectares": 120.5,
+      "timezone": "Australia/Melbourne",
+      "ownerUserId": "USR-101",
+      "irrigationZones": [
+        {"zoneId": "ZONE-A", "name": "North Block", "areaHectares": 45.0, "cropType": "Apples"},
+        {"zoneId": "ZONE-B", "name": "South Block", "areaHectares": 38.0, "cropType": "Pears"}
+      ]
+    },
+    {
+      "farmId": "FARM-002",
+      "name": "Red Gum Cotton Co.",
+      "propertyIdentificationCode": "NE123456",
+      "farmType": "COTTON",
+      "location": {"state": "NSW", "region": "Namoi Valley", "latitude": -30.324, "longitude": 149.783},
+      "areaHectares": 850.0,
+      "timezone": "Australia/Sydney",
+      "ownerUserId": "USR-202",
+      "irrigationZones": [
+        {"zoneId": "ZONE-A", "name": "Field 1", "areaHectares": 300.0, "cropType": "Cotton"}
+      ]
+    }
+  ],
+  "devices": [
+    {"deviceId": "DEV-1001", "farmId": "FARM-001", "deviceType": "SOIL_MOISTURE_SENSOR", "model": "SoilProbe SP-200", "protocol": "MQTT", "zoneId": "ZONE-A"},
+    {"deviceId": "DEV-1002", "farmId": "FARM-001", "deviceType": "WEATHER_STATION", "model": "AgriWeather AW-5", "protocol": "HTTPS", "zoneId": null},
+    {"deviceId": "DEV-1003", "farmId": "FARM-001", "deviceType": "IRRIGATION_VALVE_CONTROLLER", "model": "FlowGate VC-12", "protocol": "MQTT", "zoneId": "ZONE-A"},
+    {"deviceId": "DEV-1004", "farmId": "FARM-001", "deviceType": "FLOW_METER", "model": "AquaMeter FM-3", "protocol": "MQTT", "zoneId": "ZONE-A"},
+    {"deviceId": "DEV-1005", "farmId": "FARM-001", "deviceType": "SOIL_MOISTURE_SENSOR", "model": "SoilProbe SP-200", "protocol": "MQTT", "zoneId": "ZONE-B"},
+    {"deviceId": "DEV-1006", "farmId": "FARM-001", "deviceType": "IRRIGATION_VALVE_CONTROLLER", "model": "FlowGate VC-12", "protocol": "MQTT", "zoneId": "ZONE-B"},
+    {"deviceId": "DEV-2001", "farmId": "FARM-002", "deviceType": "SOIL_MOISTURE_SENSOR", "model": "SoilProbe SP-200", "protocol": "HTTPS", "zoneId": "ZONE-A"},
+    {"deviceId": "DEV-2002", "farmId": "FARM-002", "deviceType": "IRRIGATION_VALVE_CONTROLLER", "model": "FlowGate VC-12", "protocol": "MQTT", "zoneId": "ZONE-A"}
+  ],
+  "alertThresholds": [
+    {"metric": "SOIL_MOISTURE", "unit": "PERCENT", "below": 20.0, "severity": "WARNING", "alertType": "LOW_SOIL_MOISTURE"},
+    {"metric": "SOIL_MOISTURE", "unit": "PERCENT", "below": 10.0, "severity": "CRITICAL", "alertType": "CRITICAL_SOIL_MOISTURE"},
+    {"metric": "AIR_TEMPERATURE", "unit": "CELSIUS", "above": 40.0, "severity": "CRITICAL", "alertType": "EXTREME_HEAT"},
+    {"metric": "WATER_FLOW_RATE", "unit": "LITRES_PER_MINUTE", "above": 400.0, "severity": "CRITICAL", "alertType": "POSSIBLE_PIPE_BURST"}
+  ]
+}

@@ -1,0 +1,1406 @@
+{
+  "info": {
+    "name": "OzAgriMate API v1 - Assignment 4",
+    "description": "Tests the 8 documented REST endpoints with success and error cases. Start the services first with `python run_all.py` (fresh in-memory data), then run the folders in order. Identity headers stand in for the claims the API Gateway forwards after JWT validation.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "farmDeviceUrl",
+      "value": "http://localhost:8001"
+    },
+    {
+      "key": "telemetryUrl",
+      "value": "http://localhost:8002"
+    },
+    {
+      "key": "monitoringUrl",
+      "value": "http://localhost:8003"
+    },
+    {
+      "key": "irrigationUrl",
+      "value": "http://localhost:8004"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Farm and Device Management Service (port 8001)",
+      "item": [
+        {
+          "name": "E1 POST /farms - register farm (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Location header\", () => pm.response.to.have.header(\"Location\"));",
+                  "pm.test(\"New farm id\", () => pm.expect(body.farmId).to.match(/^FARM-\\d+$/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-101"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "FARM_MANAGER"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{farmDeviceUrl}}/api/v1/farms",
+              "host": [
+                "{{farmDeviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms"
+              ]
+            },
+            "description": "Endpoint 1. Registers a farm; returns 201 Created and a Location header.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Wattle Creek Vineyard\",\n  \"propertyIdentificationCode\": \"SA123456\",\n  \"farmType\": \"VITICULTURE\",\n  \"location\": {\n    \"state\": \"SA\",\n    \"region\": \"Barossa Valley\",\n    \"latitude\": -34.5333,\n    \"longitude\": 138.95\n  },\n  \"areaHectares\": 64.0,\n  \"timezone\": \"Australia/Adelaide\",\n  \"irrigationZones\": [\n    {\n      \"zoneId\": \"ZONE-A\",\n      \"name\": \"Shiraz Block\",\n      \"areaHectares\": 30.0,\n      \"cropType\": \"Shiraz grapes\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E1 POST /farms - duplicate PIC (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 409\", () => pm.response.to.have.status(409));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Error code is DUPLICATE_PROPERTY_IDENTIFICATION_CODE\", () => pm.expect(body.error.code).to.eql(\"DUPLICATE_PROPERTY_IDENTIFICATION_CODE\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-101"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "FARM_MANAGER"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{farmDeviceUrl}}/api/v1/farms",
+              "host": [
+                "{{farmDeviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Wattle Creek Vineyard\",\n  \"propertyIdentificationCode\": \"SA123456\",\n  \"farmType\": \"VITICULTURE\",\n  \"location\": {\n    \"state\": \"SA\",\n    \"region\": \"Barossa Valley\",\n    \"latitude\": -34.5333,\n    \"longitude\": 138.95\n  },\n  \"areaHectares\": 64.0,\n  \"timezone\": \"Australia/Adelaide\",\n  \"irrigationZones\": [\n    {\n      \"zoneId\": \"ZONE-A\",\n      \"name\": \"Shiraz Block\",\n      \"areaHectares\": 30.0,\n      \"cropType\": \"Shiraz grapes\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E1 POST /farms - latitude outside Australia (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 422\", () => pm.response.to.have.status(422));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Error code is VALIDATION_FAILED\", () => pm.expect(body.error.code).to.eql(\"VALIDATION_FAILED\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-101"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "FARM_MANAGER"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{farmDeviceUrl}}/api/v1/farms",
+              "host": [
+                "{{farmDeviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Wattle Creek Vineyard\",\n  \"propertyIdentificationCode\": \"SA999999\",\n  \"farmType\": \"VITICULTURE\",\n  \"location\": {\n    \"state\": \"SA\",\n    \"region\": \"Barossa Valley\",\n    \"latitude\": 51.5,\n    \"longitude\": 138.95\n  },\n  \"areaHectares\": 64.0,\n  \"timezone\": \"Australia/Adelaide\",\n  \"irrigationZones\": [\n    {\n      \"zoneId\": \"ZONE-A\",\n      \"name\": \"Shiraz Block\",\n      \"areaHectares\": 30.0,\n      \"cropType\": \"Shiraz grapes\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E2 GET /farms/{farmId} - retrieve farm (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Has zones and devices\", () => { pm.expect(body.irrigationZones.length).to.eql(2); pm.expect(body.devices.length).to.be.above(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-101"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "FARM_MANAGER"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              }
+            ],
+            "url": {
+              "raw": "{{farmDeviceUrl}}/api/v1/farms/FARM-001",
+              "host": [
+                "{{farmDeviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms",
+                "FARM-001"
+              ]
+            },
+            "description": "Endpoint 2. Returns the farm, its irrigation zones and active devices."
+          }
+        },
+        {
+          "name": "E2 GET /farms/{farmId} - unknown farm (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", () => pm.response.to.have.status(404));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Error code is FARM_NOT_FOUND\", () => pm.expect(body.error.code).to.eql(\"FARM_NOT_FOUND\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-101"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "FARM_MANAGER"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              }
+            ],
+            "url": {
+              "raw": "{{farmDeviceUrl}}/api/v1/farms/FARM-999",
+              "host": [
+                "{{farmDeviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms",
+                "FARM-999"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "E2 GET /farms/{farmId} - other tenant's farm (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", () => pm.response.to.have.status(403));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Error code is FARM_ACCESS_DENIED\", () => pm.expect(body.error.code).to.eql(\"FARM_ACCESS_DENIED\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-101"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "FARM_MANAGER"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              }
+            ],
+            "url": {
+              "raw": "{{farmDeviceUrl}}/api/v1/farms/FARM-002",
+              "host": [
+                "{{farmDeviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms",
+                "FARM-002"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "E3 PUT /farms/{farmId} - update farm (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Area updated\", () => pm.expect(body.areaHectares).to.eql(125));",
+                  "pm.test(\"Version incremented\", () => pm.expect(body.version).to.be.above(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-101"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "FARM_MANAGER"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{farmDeviceUrl}}/api/v1/farms/FARM-001",
+              "host": [
+                "{{farmDeviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms",
+                "FARM-001"
+              ]
+            },
+            "description": "Endpoint 3. Full replacement of the farm's editable details; version increments.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Riverbend Orchards\",\n  \"propertyIdentificationCode\": \"3RBOR001\",\n  \"farmType\": \"HORTICULTURE\",\n  \"location\": {\n    \"state\": \"VIC\",\n    \"region\": \"Goulburn Valley\",\n    \"latitude\": -36.3833,\n    \"longitude\": 145.4\n  },\n  \"areaHectares\": 125.0,\n  \"timezone\": \"Australia/Melbourne\",\n  \"irrigationZones\": [\n    {\n      \"zoneId\": \"ZONE-A\",\n      \"name\": \"North Block\",\n      \"areaHectares\": 45.0,\n      \"cropType\": \"Apples\"\n    },\n    {\n      \"zoneId\": \"ZONE-B\",\n      \"name\": \"South Block\",\n      \"areaHectares\": 38.0,\n      \"cropType\": \"Pears\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E3 PUT /farms/{farmId} - remove zone that has devices (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 409\", () => pm.response.to.have.status(409));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Error code is ZONE_HAS_ACTIVE_DEVICES\", () => pm.expect(body.error.code).to.eql(\"ZONE_HAS_ACTIVE_DEVICES\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-101"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "FARM_MANAGER"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{farmDeviceUrl}}/api/v1/farms/FARM-001",
+              "host": [
+                "{{farmDeviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms",
+                "FARM-001"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Riverbend Orchards\",\n  \"propertyIdentificationCode\": \"3RBOR001\",\n  \"farmType\": \"HORTICULTURE\",\n  \"location\": {\n    \"state\": \"VIC\",\n    \"region\": \"Goulburn Valley\",\n    \"latitude\": -36.3833,\n    \"longitude\": 145.4\n  },\n  \"areaHectares\": 125.0,\n  \"timezone\": \"Australia/Melbourne\",\n  \"irrigationZones\": [\n    {\n      \"zoneId\": \"ZONE-A\",\n      \"name\": \"North Block\",\n      \"areaHectares\": 45.0,\n      \"cropType\": \"Apples\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Telemetry Ingestion Service (port 8002)",
+      "item": [
+        {
+          "name": "E4 POST /telemetry - vendor units normalised (202)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 202\", () => pm.response.to.have.status(202));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Accepted and published\", () => { pm.expect(body.status).to.eql(\"ACCEPTED\"); pm.expect(body.publishedTo).to.eql(\"telemetry.received\"); });",
+                  "pm.test(\"FRACTION converted to PERCENT\", () => pm.expect(body.readings[0].value).to.eql(14.2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "GW-FARM-001"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "DEVICE_GATEWAY"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{telemetryUrl}}/api/v1/telemetry",
+              "host": [
+                "{{telemetryUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "telemetry"
+              ]
+            },
+            "description": "Endpoint 4. A farm gateway submits readings; units are normalised to the canonical model.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"EVT-1001-000123\",\n  \"farmId\": \"FARM-001\",\n  \"deviceId\": \"DEV-1001\",\n  \"recordedAt\": \"{{$isoTimestamp}}\",\n  \"readings\": [\n    {\n      \"metric\": \"SOIL_MOISTURE\",\n      \"value\": 0.142,\n      \"unit\": \"FRACTION\"\n    },\n    {\n      \"metric\": \"SOIL_TEMPERATURE\",\n      \"value\": 64.4,\n      \"unit\": \"FAHRENHEIT\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E4 POST /telemetry - same eventId is ignored (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Duplicate ignored\", () => pm.expect(body.status).to.eql(\"DUPLICATE_IGNORED\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "GW-FARM-001"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "DEVICE_GATEWAY"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{telemetryUrl}}/api/v1/telemetry",
+              "host": [
+                "{{telemetryUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "telemetry"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"EVT-1001-000123\",\n  \"farmId\": \"FARM-001\",\n  \"deviceId\": \"DEV-1001\",\n  \"recordedAt\": \"{{$isoTimestamp}}\",\n  \"readings\": [\n    {\n      \"metric\": \"SOIL_MOISTURE\",\n      \"value\": 0.142,\n      \"unit\": \"FRACTION\"\n    },\n    {\n      \"metric\": \"SOIL_TEMPERATURE\",\n      \"value\": 64.4,\n      \"unit\": \"FAHRENHEIT\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E4 POST /telemetry - implausible reading quarantined (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 422\", () => pm.response.to.have.status(422));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Error code is READING_REJECTED\", () => pm.expect(body.error.code).to.eql(\"READING_REJECTED\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "GW-FARM-001"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "DEVICE_GATEWAY"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{telemetryUrl}}/api/v1/telemetry",
+              "host": [
+                "{{telemetryUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "telemetry"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"EVT-1001-000124\",\n  \"farmId\": \"FARM-001\",\n  \"deviceId\": \"DEV-1001\",\n  \"recordedAt\": \"{{$isoTimestamp}}\",\n  \"readings\": [\n    {\n      \"metric\": \"SOIL_MOISTURE\",\n      \"value\": 140,\n      \"unit\": \"PERCENT\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E4 POST /telemetry - unregistered device (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", () => pm.response.to.have.status(404));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Error code is DEVICE_NOT_REGISTERED\", () => pm.expect(body.error.code).to.eql(\"DEVICE_NOT_REGISTERED\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "GW-FARM-001"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "DEVICE_GATEWAY"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{telemetryUrl}}/api/v1/telemetry",
+              "host": [
+                "{{telemetryUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "telemetry"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"EVT-9999-000001\",\n  \"farmId\": \"FARM-001\",\n  \"deviceId\": \"DEV-9999\",\n  \"recordedAt\": \"{{$isoTimestamp}}\",\n  \"readings\": [\n    {\n      \"metric\": \"SOIL_MOISTURE\",\n      \"value\": 0.142,\n      \"unit\": \"FRACTION\"\n    },\n    {\n      \"metric\": \"SOIL_TEMPERATURE\",\n      \"value\": 64.4,\n      \"unit\": \"FAHRENHEIT\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E5 GET /farms/{farmId}/telemetry/latest - latest readings (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Stale reading flagged\", () => pm.expect(body.readings.some(r => r.stale === true)).to.be.true);",
+                  "pm.test(\"New reading present\", () => pm.expect(body.readings.some(r => r.deviceId === \"DEV-1001\" && r.value === 14.2)).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-301"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "AGRONOMIST"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001,FARM-002"
+              }
+            ],
+            "url": {
+              "raw": "{{telemetryUrl}}/api/v1/farms/FARM-001/telemetry/latest",
+              "host": [
+                "{{telemetryUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms",
+                "FARM-001",
+                "telemetry",
+                "latest"
+              ]
+            },
+            "description": "Endpoint 5. Latest value per device and metric; readings older than 10 minutes are flagged stale."
+          }
+        },
+        {
+          "name": "E5 GET /farms/{farmId}/telemetry/latest - no gateway claims (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401\", () => pm.response.to.have.status(401));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Error code is AUTHENTICATION_REQUIRED\", () => pm.expect(body.error.code).to.eql(\"AUTHENTICATION_REQUIRED\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{telemetryUrl}}/api/v1/farms/FARM-001/telemetry/latest",
+              "host": [
+                "{{telemetryUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms",
+                "FARM-001",
+                "telemetry",
+                "latest"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Monitoring and Alert Service (port 8003)",
+      "item": [
+        {
+          "name": "E6 GET /farms/{farmId}/alerts - open alerts (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Alert raised from telemetry event\", () => pm.expect(body.alerts.some(a => a.alertType === \"LOW_SOIL_MOISTURE\" && a.sourceEventId === \"EVT-1001-000123\")).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-101"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "FARM_MANAGER"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              }
+            ],
+            "url": {
+              "raw": "{{monitoringUrl}}/api/v1/farms/FARM-001/alerts?status=OPEN",
+              "host": [
+                "{{monitoringUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms",
+                "FARM-001",
+                "alerts"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "OPEN"
+                }
+              ]
+            },
+            "description": "Endpoint 6. Alerts are created asynchronously from TelemetryReceived events."
+          }
+        },
+        {
+          "name": "E6 GET /farms/{farmId}/alerts - invalid status filter (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 422\", () => pm.response.to.have.status(422));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Error code is VALIDATION_FAILED\", () => pm.expect(body.error.code).to.eql(\"VALIDATION_FAILED\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-101"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "FARM_MANAGER"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              }
+            ],
+            "url": {
+              "raw": "{{monitoringUrl}}/api/v1/farms/FARM-001/alerts?status=MAYBE",
+              "host": [
+                "{{monitoringUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms",
+                "FARM-001",
+                "alerts"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "MAYBE"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "E6 GET /farms/{farmId}/alerts - unknown farm (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", () => pm.response.to.have.status(404));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Error code is FARM_NOT_FOUND\", () => pm.expect(body.error.code).to.eql(\"FARM_NOT_FOUND\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-101"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "FARM_MANAGER"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              }
+            ],
+            "url": {
+              "raw": "{{monitoringUrl}}/api/v1/farms/FARM-999/alerts",
+              "host": [
+                "{{monitoringUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms",
+                "FARM-999",
+                "alerts"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Irrigation Control Service (port 8004)",
+      "item": [
+        {
+          "name": "E7 POST /farms/{farmId}/irrigation-commands - start (202)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 202\", () => pm.response.to.have.status(202));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Dispatched to valve\", () => { pm.expect(body.status).to.eql(\"DISPATCHED\"); pm.expect(body.dispatch.targetDeviceId).to.eql(\"DEV-1003\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-101"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "FARM_MANAGER"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{irrigationUrl}}/api/v1/farms/FARM-001/irrigation-commands",
+              "host": [
+                "{{irrigationUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms",
+                "FARM-001",
+                "irrigation-commands"
+              ]
+            },
+            "description": "Endpoint 7. Validated, audited and dispatched via MQTT; 202 because the device confirms later.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"zoneId\": \"ZONE-A\",\n  \"action\": \"START\",\n  \"durationMinutes\": 45,\n  \"flowRateLitresPerMinute\": 120,\n  \"source\": \"MANUAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E7 POST irrigation-commands - zone already irrigating (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 409\", () => pm.response.to.have.status(409));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Error code is ZONE_ALREADY_IRRIGATING\", () => pm.expect(body.error.code).to.eql(\"ZONE_ALREADY_IRRIGATING\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-101"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "FARM_MANAGER"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{irrigationUrl}}/api/v1/farms/FARM-001/irrigation-commands",
+              "host": [
+                "{{irrigationUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms",
+                "FARM-001",
+                "irrigation-commands"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"zoneId\": \"ZONE-A\",\n  \"action\": \"START\",\n  \"durationMinutes\": 30,\n  \"source\": \"MANUAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E7 POST irrigation-commands - agronomist not permitted (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", () => pm.response.to.have.status(403));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Error code is ROLE_NOT_PERMITTED\", () => pm.expect(body.error.code).to.eql(\"ROLE_NOT_PERMITTED\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-301"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "AGRONOMIST"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001,FARM-002"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{irrigationUrl}}/api/v1/farms/FARM-001/irrigation-commands",
+              "host": [
+                "{{irrigationUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms",
+                "FARM-001",
+                "irrigation-commands"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"zoneId\": \"ZONE-B\",\n  \"action\": \"START\",\n  \"durationMinutes\": 30,\n  \"source\": \"MANUAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E7 POST irrigation-commands - unconfirmed AI command (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", () => pm.response.to.have.status(403));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Error code is HUMAN_CONFIRMATION_REQUIRED\", () => pm.expect(body.error.code).to.eql(\"HUMAN_CONFIRMATION_REQUIRED\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-101"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "FARM_MANAGER"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{irrigationUrl}}/api/v1/farms/FARM-001/irrigation-commands",
+              "host": [
+                "{{irrigationUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms",
+                "FARM-001",
+                "irrigation-commands"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"zoneId\": \"ZONE-B\",\n  \"action\": \"START\",\n  \"durationMinutes\": 30,\n  \"source\": \"AI_RECOMMENDATION\",\n  \"recommendationId\": \"REC-20261014-07\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E7 POST irrigation-commands - invalid duration (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 422\", () => pm.response.to.have.status(422));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Error code is VALIDATION_FAILED\", () => pm.expect(body.error.code).to.eql(\"VALIDATION_FAILED\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-101"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "FARM_MANAGER"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{irrigationUrl}}/api/v1/farms/FARM-001/irrigation-commands",
+              "host": [
+                "{{irrigationUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms",
+                "FARM-001",
+                "irrigation-commands"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"zoneId\": \"ZONE-B\",\n  \"action\": \"START\",\n  \"durationMinutes\": 0,\n  \"source\": \"MANUAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Device decommissioning across services",
+      "item": [
+        {
+          "name": "E8 DELETE /farms/{farmId}/devices/{deviceId} - remove device (204)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-101"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "FARM_MANAGER"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              }
+            ],
+            "url": {
+              "raw": "{{farmDeviceUrl}}/api/v1/farms/FARM-001/devices/DEV-1005",
+              "host": [
+                "{{farmDeviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms",
+                "FARM-001",
+                "devices",
+                "DEV-1005"
+              ]
+            },
+            "description": "Endpoint 8. Decommissions the device and publishes DeviceDecommissioned."
+          }
+        },
+        {
+          "name": "E8 DELETE /farms/{farmId}/devices/{deviceId} - already removed (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", () => pm.response.to.have.status(404));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Error code is DEVICE_NOT_FOUND\", () => pm.expect(body.error.code).to.eql(\"DEVICE_NOT_FOUND\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "USR-101"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "FARM_MANAGER"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              }
+            ],
+            "url": {
+              "raw": "{{farmDeviceUrl}}/api/v1/farms/FARM-001/devices/DEV-1005",
+              "host": [
+                "{{farmDeviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "farms",
+                "FARM-001",
+                "devices",
+                "DEV-1005"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "E4 POST /telemetry - removed device rejected via event (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", () => pm.response.to.have.status(404));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Error code is DEVICE_NOT_REGISTERED\", () => pm.expect(body.error.code).to.eql(\"DEVICE_NOT_REGISTERED\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "GW-FARM-001"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "DEVICE_GATEWAY"
+              },
+              {
+                "key": "X-Farm-Access",
+                "value": "FARM-001"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{telemetryUrl}}/api/v1/telemetry",
+              "host": [
+                "{{telemetryUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "telemetry"
+              ]
+            },
+            "description": "The Telemetry Ingestion Service learned of the removal from the DeviceDecommissioned event.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"EVT-1005-000001\",\n  \"farmId\": \"FARM-001\",\n  \"deviceId\": \"DEV-1005\",\n  \"recordedAt\": \"{{$isoTimestamp}}\",\n  \"readings\": [\n    {\n      \"metric\": \"SOIL_MOISTURE\",\n      \"value\": 30,\n      \"unit\": \"PERCENT\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

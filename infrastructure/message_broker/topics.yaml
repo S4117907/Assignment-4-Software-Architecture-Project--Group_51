@@ -1,0 +1,33 @@
+# Message Broker container: Apache Kafka (Amazon MSK in production, ADR 6). All topics are keyed by farmId -> per-farm ordering, parallelism across farms (ADR 2).
+# Replication factor 3 across three availability zones (ADR 3).
+topics:
+  - name: farm.events
+    partitions: 12
+    replicationFactor: 3
+    retention: 30d
+    producers: [farm-device-management-service]
+    consumers: [telemetry-ingestion-service, monitoring-alert-service, irrigation-control-service]
+  - name: device.events
+    partitions: 12
+    replicationFactor: 3
+    retention: 30d
+    producers: [farm-device-management-service]
+    consumers: [telemetry-ingestion-service, irrigation-control-service]
+  - name: telemetry.received
+    partitions: 96          # sized for 50,000+ farms; scale consumers up to partition count
+    replicationFactor: 3
+    retention: 7d           # long-term history lives in the Time-Series Database
+    producers: [telemetry-ingestion-service]
+    consumers: [monitoring-alert-service, ai-advisory-service]
+  - name: alert.raised
+    partitions: 24
+    replicationFactor: 3
+    retention: 14d
+    producers: [monitoring-alert-service]
+    consumers: [external-integration-service]
+  - name: irrigation.command-status
+    partitions: 24
+    replicationFactor: 3
+    retention: 14d
+    producers: [telemetry-ingestion-service]
+    consumers: [irrigation-control-service]
